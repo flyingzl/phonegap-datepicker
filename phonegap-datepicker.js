@@ -12,7 +12,7 @@ cordova.define("phongap/dateutil", function(require, exports, module) {
 });
 
 
-DateUtil = require("phongap/dateutil");
+DateUtil = cordova.require("phongap/dateutil");
 
 //  inovke DateUtil.show() to show DatePicker Dialog
 //  invoke DateUtil.time() to show TimePicker Dialog
