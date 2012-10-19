@@ -12,7 +12,7 @@ Use the phonegap-datepicker plugin as follows:
 	```
 - use `phonegap-datepicker.js` in your html
 
-- invoke the plgun javascript API like this
+- invoke the plugin javascript API like this
 
 	```js
 
