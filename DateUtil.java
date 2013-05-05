@@ -1,10 +1,10 @@
 package com.flyingzl;
 
+
 import java.util.Calendar;
 
-import org.apache.cordova.api.Plugin;
-import org.apache.cordova.api.PluginResult;
-import org.apache.cordova.api.PluginResult.Status;
+import org.apache.cordova.api.CallbackContext;
+import org.apache.cordova.api.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,113 +14,111 @@ import android.app.TimePickerDialog;
 import android.widget.DatePicker;
 import android.widget.TimePicker;
 
-public class DateUtil extends Plugin {
+public class DateUtil extends CordovaPlugin {
 
 	private static final String DATE_METHOD = "date";
 
 	private static final String TIME_METHOD = "time";
 
-	private String callbackId;
-
 	@Override
-	public PluginResult execute(String action, JSONArray args, String callbackId) {
-
-		this.callbackId = callbackId;
-
-		PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
-
-		result.setKeepCallback(true);
+	public boolean execute(String action, JSONArray args,
+			CallbackContext callbackContext) {
 
 		if (action.equals(DATE_METHOD)) {
-			showDateDialog();
-			return result;
+			showDateDialog(callbackContext);
+			// this.cordova.getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+			return true;
 		} else if (action.equals(TIME_METHOD)) {
-			showTimeDialog();
-			return result;
+			showTimeDialog(callbackContext);
+			return true;
 		}
 
-		return new PluginResult(PluginResult.Status.INVALID_ACTION);
+		return false;
 
-	}
-
-	// 显示日期都为同步
-	public boolean isSynch(String action) {
-		return true;
 	}
 
 	/**
 	 * 显示日期选择对话框
 	 */
-	private void showDateDialog() {
+	private synchronized void showDateDialog(
+			final CallbackContext callbackContext) {
 
-		final JSONObject object = new JSONObject();
+		Runnable runnable = new Runnable() {
 
-		Calendar c = Calendar.getInstance();
+			@Override
+			public void run() {
+				final JSONObject object = new JSONObject();
+				Calendar c = Calendar.getInstance();
+				DatePickerDialog dlg = new DatePickerDialog(
+						cordova.getActivity(),
+						new DatePickerDialog.OnDateSetListener() {
 
-		new DatePickerDialog(cordova.getActivity(),
-				new DatePickerDialog.OnDateSetListener() {
+							@Override
+							public void onDateSet(DatePicker view, int year,
+									int monthOfYear, int dayOfMonth) {
+								try {
+									object.put("year", year);
+									object.put("month", monthOfYear);
+									object.put("day", dayOfMonth);
+									callbackContext.success(object);
 
-					@Override
-					public void onDateSet(DatePicker view, int year,
-							int monthOfYear, int dayOfMonth) {
+								} catch (JSONException e) {
+									callbackContext.error(e.getMessage());
+								}
 
-						try {
-							object.put("year", year);
-							object.put("month", monthOfYear);
-							object.put("day", dayOfMonth);
+							}
+						}, c.get(Calendar.YEAR), c.get(Calendar.MONTH),
+						c.get(Calendar.DAY_OF_MONTH));
 
-							showResult(new PluginResult(Status.OK, object));
+				dlg.show();
+			}
+		};
 
-						} catch (JSONException e) {
-							showResult(new PluginResult(
-									PluginResult.Status.JSON_EXCEPTION));
-						}
-
-					}
-				}, c.get(Calendar.YEAR), c.get(Calendar.MONTH),
-				c.get(Calendar.DAY_OF_MONTH)).show();
+		this.cordova.getActivity().runOnUiThread(runnable);
 
 	}
 
 	/**
 	 * 显示时间选择对话框
 	 */
-	private void showTimeDialog() {
+	private synchronized void showTimeDialog(
+			final CallbackContext callbackContext) {
 
-		final JSONObject object = new JSONObject();
+		Runnable runnable = new Runnable() {
 
-		Calendar c = Calendar.getInstance();
-		
-		new TimePickerDialog(cordova.getActivity(),
-				new TimePickerDialog.OnTimeSetListener() {
+			@Override
+			public void run() {
+				final JSONObject object = new JSONObject();
+				Calendar c = Calendar.getInstance();
+				TimePickerDialog dlg = new TimePickerDialog(
+						cordova.getActivity(),
+						new TimePickerDialog.OnTimeSetListener() {
 
-					@Override
-					public void onTimeSet(TimePicker paramTimePicker,
-							int hourOfDay, int mintue) {
-						try {
-							object.put("hour", hourOfDay);
-							object.put("minute", mintue);
+							@Override
+							public void onTimeSet(TimePicker paramTimePicker,
+									int hourOfDay, int mintue) {
+								try {
+									object.put("hour", hourOfDay);
+									object.put("minute", mintue);
+									callbackContext.success(object);
 
-							showResult(new PluginResult(Status.OK, object));
+								} catch (JSONException e) {
+									callbackContext.error(e.getMessage());
 
-						} catch (JSONException e) {
-							showResult(new PluginResult(
-									PluginResult.Status.JSON_EXCEPTION));
-						}
+								}
 
-					}
-				}, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true)
-				.show();
+							}
+						}, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE),
+						true);
 
-	}
+				dlg.show();
 
-	// 回调函数处理
-	private void showResult(PluginResult pluginResult) {
-		if (pluginResult.getStatus() == Status.OK.ordinal()) {
-			this.success(pluginResult, callbackId);
-		} else {
-			this.error(pluginResult, callbackId);
-		}
+			}
+
+		};
+
+		this.cordova.getActivity().runOnUiThread(runnable);
+
 	}
 
 }
